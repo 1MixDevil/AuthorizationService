@@ -1,13 +1,25 @@
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import NoResultFound
-
+from fastapi import HTTPException, Depends
 from app.models.permissions_model import PermissionGroup
 from app.models.user_model import User
 from app.schemas.user_schema import UserCreate, UserUpdate
 
 # Создать пользователя
 def create_user(db: Session, data: UserCreate) -> User:
+    # Проверяем, существует ли пользователь с таким telegram_username
+    existing_user = db.query(User).filter(User.telegram_username == data.telegram_username).first()  # Замените `User` на название вашей модели User
+
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this telegram_username already exists")
+
+    # Проверяем, существует ли пользователь с таким username
+    if data.username:
+        existing_user_by_username = db.query(User).filter(User.username == data.username).first()
+        if existing_user_by_username:
+            raise HTTPException(status_code=400, detail="User with this username already exists")
+
     user = User(**data.dict(exclude_none=True))
     db.add(user)
     db.commit()

@@ -24,6 +24,9 @@ router = APIRouter(prefix="/users", tags=["users"])
 )
 def create_user_endpoint(data: UserCreate, db: Session = Depends(get_db)):
     try:
+        print(data)
+        print(data)
+        print(data)
         return create_user(db, data)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
