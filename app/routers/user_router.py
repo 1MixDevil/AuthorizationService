@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import NoResultFound
 
 from app.core.db import get_db
-from app.schemas.user_schema import UserCreate, UserRead, UserUpdate
+from app.schemas.user_schema import UserCreate, UserRead, UserUpdate, UserSettingsUpdate, UserSettingsRead
 from app.crud.user_crud import (
     create_user,
     get_user,
@@ -14,6 +14,7 @@ from app.crud.user_crud import (
     add_group_to_user,
     remove_group_from_user,
 )
+from app.models.user_model import User, UserSettings
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -24,9 +25,6 @@ router = APIRouter(prefix="/users", tags=["users"])
 )
 def create_user_endpoint(data: UserCreate, db: Session = Depends(get_db)):
     try:
-        print(data)
-        print(data)
-        print(data)
         return create_user(db, data)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -89,3 +87,53 @@ def unassign_group(user_id: int, group_id: int, db: Session = Depends(get_db)):
         return remove_group_from_user(db, user_id, group_id)
     except NoResultFound as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+@router.put("/update_user_settings/", response_model=UserRead)
+async def update_user_settings(
+    new_settings: UserSettingsUpdate,
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == new_settings.user_id).first()
+    print(user)
+    print(user)
+    print(user)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    settings = db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
+
+    if not settings:
+        settings = UserSettings(user_id=user.id)
+        db.add(settings)
+
+    # Обновляем только те поля, которые явно переданы (не None)
+    for field, value in new_settings.dict(exclude={"user_id"}).items():
+        if value is not None:
+            setattr(settings, field, value)
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+@router.get("/get_user_settings/{telegram_username}", response_model=UserSettingsRead)
+async def get_user_settings(
+    telegram_username: str,
+    db: Session = Depends(get_db),
+):
+    print(telegram_username)
+    user = db.query(User).filter(User.telegram_username == telegram_username).first()
+    print(user)
+    print(user)
+    print(user)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    settings = db.query(UserSettings).filter(UserSettings.user_id == user.id).first()
+
+    if not settings:
+        settings = UserSettings(user_id=user.id)
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+
+    return settings

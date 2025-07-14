@@ -21,3 +21,23 @@ class UserRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+#Для добавления настроек
+class UserSettingsUpdate(BaseModel):
+    user_id: int
+    request_price_buy:  Optional[bool]  = Field(None, example=False)   # Запрашивать цену покупки?
+    request_price_sale: Optional[bool]  = Field(None, example=False)   # Запрашивать цену продажи?
+    is_seller:          Optional[bool]  = Field(None, example=False)  # Является продавцом?
+    show_description:   Optional[bool]  = Field(None, example=False) # Показывать описание?
+    auto_fill_dates:    Optional[bool]  = Field(None, example=False)  # Автоматически проставлять даты?
+
+    class Config:
+        orm_mode = True
+
+
+
+class UserSettingsRead(UserSettingsUpdate):
+    id: int
+
+    class Config:
+        orm_mode = True
